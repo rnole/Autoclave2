@@ -71,90 +71,28 @@ def GetGridData(startDate, finalDate, orderNumber):
 			Peso_tinta = results[5].Peso_tinta_redes if(results[5].Red_madeja == True) else results[5].Peso_tinta_madejas
 			Material = 'Polyester' if(results[5].Polyester == True) else 'Nylon'
 			Fecha = Constants.ChangeDate2ddmmyy(results[0].Fecha)
-
-			if(results[5].Producto1 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto1)
-				row.append(results[5].Peso1)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
-
-			if(results[5].Producto2 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto2)
-				row.append(results[5].Peso2)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
 			
-			if(results[5].Producto3 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto3)
-				row.append(results[5].Peso3)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
-			
-			if(results[5].Producto4 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto4)
-				row.append(results[5].Peso4)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
-			
-			if(results[5].Producto5 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto5)
-				row.append(results[5].Peso5)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
+			products_list = ((results[5].Producto1, results[5].Peso1),
+					 (results[5].Producto2, results[5].Peso2),
+					 (results[5].Producto3, results[5].Peso3),
+					 (results[5].Producto4, results[5].Peso4),
+					 (results[5].Producto5, results[5].Peso5),
+					 (results[5].Producto6, results[5].Peso6))
 
-			if(results[5].Producto6 != 0):
-				row = []
-				row.append(Fecha)
-				row.append(results[5].Producto6)
-				row.append(results[5].Peso6)
-				row.append(results[0].Hora)
-				row.append(results[len(results) - 1].Hora)
-				row.append(Proceso)
-				row.append(Redes_o_Madejas)
-				row.append(Peso_tinta)
-				row.append(Material)
-				row.append(results[5].Usuario)
-				matrixTable.append(row)
+			for producto_num, peso_num in products_list:
+				if(producto_num != 0):
+					row = []
+					row.append(Fecha)
+					row.append(producto_num)
+					row.append(peso_num)
+					row.append(results[0].Hora)
+					row.append(results[len(results) - 1].Hora)
+					row.append(Proceso)
+					row.append(Redes_o_Madejas)
+					row.append(Peso_tinta)
+					row.append(Material)
+					row.append(results[5].Usuario)
+					matrixTable.append(row)
 
 	else:
 		#Filtramos por numero de orden
