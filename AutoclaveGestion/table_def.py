@@ -17,6 +17,8 @@ class PLC_registers(Base):
 	Presion2 		= Column(Integer)
 	Presion_interior	= Column(Integer)
 	Estatus			= Column(Boolean)
+	Start_status		= Column(Boolean)
+	End_status		= Column(Boolean)
 	Producto1		= Column(Integer)
 	Producto2		= Column(Integer)
 	Producto3		= Column(Integer)
