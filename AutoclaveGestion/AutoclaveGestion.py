@@ -68,6 +68,8 @@ class MainModel():
 
 		except ValueError:	
 			if((firstdate == '') and (seconddate == '')):
+				self.startDate = ''
+				self.finalDate = ''
 				return True
 			else:
 				dlg = wx.MessageDialog(None, 'Error de formato en las fechas', 'MessageDialog', wx.OK)

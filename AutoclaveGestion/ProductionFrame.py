@@ -25,45 +25,24 @@ def GetGridData(startDate, finalDate, orderNumber):
 		Session = sessionmaker(bind=engine)
 		session = Session()
 
-		stopping_points = []
+		starting_points = []
 		
-		#Check precedent stopping points
-		previous_stopping_point = session.query(PLC_registers).filter(PLC_registers.Fecha < startDate,
-							PLC_registers.Estatus  == 0).order_by(PLC_registers.id.desc()).first()
+		starting_points = session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate,
+									PLC_registers.Fecha <= finalDate,
+									PLC_registers.Start_status == 1).all()
 
-		if(previous_stopping_point != None):
-			row_after_stopping_point = session.query(PLC_registers).filter(PLC_registers.id == (previous_stopping_point.id + 1)).first()
+		print len(starting_points)
+		
+		for i in range(len(starting_points)):
+			#with each starting point, get its corresponding stopping point
+			stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= (starting_points[i].id + 1),
+										PLC_registers.End_status == 1).first()
+			print 'starting point: ', starting_points[i].id;
+			print 'stopping_point: ', stopping_point.id;
 
-			if(row_after_stopping_point.Fecha == startDate):
-				print 'Agregado un stopping point adicional(precedente)'
-				print 'Precedente id: ', previous_stopping_point.id
-				stopping_points.append(previous_stopping_point)
+			results = session.query(PLC_registers).filter(PLC_registers.id >= (starting_points[i].id), 
+							      	      PLC_registers.id <= (stopping_point.id -1)).all()
 
-
-		stopping_points += session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate, 
-								PLC_registers.Fecha <= finalDate, 
-								PLC_registers.Estatus  == 0).all()
-
-		#Check posterior stopping points
-		print 'last id: ', stopping_points[-1].id
-		row_after_stopping_point = session.query(PLC_registers).filter(PLC_registers.id == (stopping_points[-1].id + 1)).first()
-
-		if(row_after_stopping_point != None):
-			if((row_after_stopping_point.Fecha ==  finalDate) and (row_after_stopping_point.Estatus == True)):
-
-				posterior_stopping_point = session.query(PLC_registers).filter(PLC_registers.id > row_after_stopping_point.id,
-											PLC_registers.Estatus == 0).first()
-
-				if(posterior_stopping_point != None):
-					print 'Agregado un stopping point adicional(posterior)'
-					print 'Posterior id: ', posterior_stopping_point.id
-
-					stopping_points.append(posterior_stopping_point)
-
-	
-		for i in range(len(stopping_points) - 1):
-			results = session.query(PLC_registers).filter(PLC_registers.id >= (stopping_points[i].id + 1), 
-							      PLC_registers.id <= (stopping_points[i +1].id -1)).all()
 			
 
 			Proceso = 'Lavado' if(results[5].Lavado == True) else 'Tenido'
@@ -119,20 +98,20 @@ def GetGridData(startDate, finalDate, orderNumber):
 				print 'Entre a if(orderNumber_found)'
 				break
 
-			previous_stopping_point = session.query(PLC_registers).filter(PLC_registers.id < orderNumber_found.id,
-									PLC_registers.Estatus == 0).order_by(PLC_registers.id.desc()).first()
+			previous_starting_point = session.query(PLC_registers).filter(PLC_registers.id <= orderNumber_found.id,
+									PLC_registers.Start_status == 1).order_by(PLC_registers.id.desc()).first()
 
-			next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id > orderNumber_found.id,
-											PLC_registers.Estatus == 0).first()							
+			next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= orderNumber_found.id,
+											PLC_registers.End_status == 1).first()							
 			if(next_stopping_point == None):
 				print 'Entre a if(next_stopping_point)'
 				break
 
 			print 'orderNumber_found: ', orderNumber_found.id
-			print 'previous_stopping_point: ', previous_stopping_point.id
+			print 'previous_starting_point: ', previous_starting_point.id
 			print 'next_stopping_point: ', next_stopping_point.id
 
-			results = session.query(PLC_registers).filter(PLC_registers.id > previous_stopping_point.id, 
+			results = session.query(PLC_registers).filter(PLC_registers.id >= previous_starting_point.id, 
 								      PLC_registers.id < next_stopping_point.id).all()
 
 			row = []

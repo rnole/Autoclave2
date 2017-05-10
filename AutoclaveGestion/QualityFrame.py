@@ -19,6 +19,8 @@ class QualityModel():
 
 	def GetDatesList(self, startDate, finalDate, orderNumber):
 		dates_list = []
+		self.starting_points = []
+
 		
 		if(orderNumber == ''):
 			#Filtramos por fechas
@@ -27,36 +29,11 @@ class QualityModel():
 			Session = sessionmaker(bind=engine)
 			session = Session()
 
-			self.stopping_points = []
-			
-			#Check precedent stopping points
-			previous_stopping_point = session.query(PLC_registers).filter(PLC_registers.Fecha < startDate,
-								PLC_registers.Estatus  == 0).order_by(PLC_registers.id.desc()).first()
+			self.starting_points = session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate,
+									PLC_registers.Fecha <= finalDate,
+									PLC_registers.Start_status == 1).all()
 
-			if(previous_stopping_point != None):
-				row_after_stopping_point = session.query(PLC_registers).filter(PLC_registers.id == (previous_stopping_point.id + 1)).first()
-
-				if(row_after_stopping_point.Fecha == startDate):
-					print 'Agregado un stopping point adicional(precedente)'
-					self.stopping_points.append(previous_stopping_point)
-
-
-			self.stopping_points += session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate, 
-								PLC_registers.Fecha <= finalDate, 
-								PLC_registers.Estatus  == 0).all()
-			
-			#Check posterior stopping points
-			print 'last id: ', self.stopping_points[-1].id
-			row_after_stopping_point = session.query(PLC_registers).filter(PLC_registers.id == (self.stopping_points[-1].id + 1)).first()
-
-			if(row_after_stopping_point != None):
-				if((row_after_stopping_point.Fecha ==  finalDate) and (row_after_stopping_point.Estatus == True)):
-
-					posterior_stopping_point = session.query(PLC_registers).filter(PLC_registers.id > row_after_stopping_point.id,
-												PLC_registers.Estatus == 0).first()
-
-					self.stopping_points.append(posterior_stopping_point)
-
+			print 'len starting_points: ', len(self.starting_points)
 
 		else:
 			#Filtramos por numero de orden
@@ -79,35 +56,28 @@ class QualityModel():
 											    PLC_registers.Producto6 == self.orderNumber)).first()
 							
 				if(self.orderNumber_found == None):
-					print 'Entre a if'
+					print 'Entre a if(orderNumber_found)'
 					break
 
-				
+				previous_starting_point = session.query(PLC_registers).filter(PLC_registers.id <= self.orderNumber_found.id,
+									PLC_registers.Start_status == 1).order_by(PLC_registers.id.desc()).first()
 
-				previous_stopping_point = session.query(PLC_registers).filter(PLC_registers.id < self.orderNumber_found.id,
-									PLC_registers.Estatus == 0).order_by(PLC_registers.id.desc()).first()
-
-				next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id > self.orderNumber_found.id,
-									PLC_registers.Estatus == 0).first()
+				next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= self.orderNumber_found.id,
+									PLC_registers.End_status == 1).first()
 
 				if(next_stopping_point == None):
 					print 'Entre a if'
 					break
 
 				print 'orderNumber_found: ', self.orderNumber_found.id
-				print 'previous_stopping_point: ', previous_stopping_point.id
+				print 'previous_starting_point: ', previous_starting_point.id
 				print 'next_stopping_point: ', next_stopping_point.id
-				self.stopping_points.append(previous_stopping_point)
-				self.stopping_points.append(next_stopping_point)
-			
-			
+				self.starting_points.append(previous_starting_point)
+				
 
-		print len(self.stopping_points)	
-
-		for i in range(len(self.stopping_points) - 1):
-			starting_point = session.query(PLC_registers).filter(PLC_registers.id == (self.stopping_points[i].id + 1)).first()
-			print 'ID starting point: ', starting_point.id
-			dates_list.append(starting_point.Fecha)
+		for i in range(len(self.starting_points)):
+			print 'ID starting point: ', self.starting_points[i].id
+			dates_list.append(self.starting_points[i].Fecha)
 
 		return dates_list
 
@@ -116,7 +86,7 @@ class QualityModel():
 		button = evt.GetEventObject()
         	print "The button you pressed was labeled: " + button.GetLabel()
 		print "The button you pressed has ID: " + str(button.GetId())
-		print 'La fecha y numero orden para ese ID es: '
+		
 
 		#Aqui hacer queries
 		# create a Session		
@@ -124,8 +94,11 @@ class QualityModel():
 		Session = sessionmaker(bind=engine)
 		session = Session()
 		
-		results = session.query(PLC_registers).filter(PLC_registers.id >= (self.stopping_points[button.GetId()].id + 1), 
-							      PLC_registers.id <= (self.stopping_points[button.GetId() +1].id -1)).all()
+		stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= (self.starting_points[button.GetId()].id + 1),
+								     PLC_registers.End_status == 1).first()
+
+		results = session.query(PLC_registers).filter(PLC_registers.id >= (self.starting_points[button.GetId()].id), 
+							      PLC_registers.id <= (stopping_point.id -1)).all()
 
 		Presion1_plot_array 	= []
 		Presion2_plot_array 	= []
