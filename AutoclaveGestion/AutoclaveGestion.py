@@ -35,18 +35,26 @@ class MainModel():
 
 		pub.sendMessage('Checkboxes changed')
 
-	def FilterHandler(self, startDate, finalDate, orderNumber):
+	def FilterHandler(self, startDate, finalDate, orderNumber, selectedAutoclave):
+
 		if((self.productionCheckbox_value == False) and (self.qualityCheckbox_value == False)):
 			dlg = wx.MessageDialog(None, 'Ningún filtro seleccionado', 'MessageDialog', wx.OK)
 			dlg_result = dlg.ShowModal()
 			dlg.Destroy()
+			return
 
 
 		elif(self.AreDatesCorrect(startDate, finalDate) == False):
 			return
 
+		elif(selectedAutoclave == wx.NOT_FOUND):
+			dlg = wx.MessageDialog(None, 'Ningún Autoclave seleccionado', 'MessageDialog', wx.OK)
+			dlg_result = dlg.ShowModal()
+			dlg.Destroy()
+			return
+
 		elif(self.productionCheckbox_value == True):
-			ResultsFrame = ProductionFrame(self.startDate, self.finalDate, orderNumber)
+			ResultsFrame = ProductionFrame(self.startDate, self.finalDate, orderNumber, selectedAutoclave)
 			ResultsFrame.Show()
 
 		elif(self.qualityCheckbox_value == True):
@@ -92,6 +100,7 @@ class MainFrame(wx.Frame):
 		mainSizer = wx.BoxSizer(wx.VERTICAL)
 		dateSizer =  wx.BoxSizer(wx.HORIZONTAL)
 		orderNumberSizer = wx.BoxSizer(wx.HORIZONTAL)
+		autoclaveSelectorSizer = wx.BoxSizer(wx.HORIZONTAL)
 		checkBoxesSizer  = wx.BoxSizer(wx.HORIZONTAL)
 
 		StartDate_label = wx.StaticText(self.MainPanel, -1, "Fecha Desde:")
@@ -99,6 +108,9 @@ class MainFrame(wx.Frame):
 
 		FinalDate_label = wx.StaticText(self.MainPanel, -1, "Fecha Hasta:")
 		self.FinalDate  = wx.TextCtrl(self.MainPanel, -1, "")
+
+		AutoclaveChoice_label = wx.StaticText(self.MainPanel, -1, "Nº autoclave:")
+		self.AutoclaveChoice = wx.Choice(self.MainPanel, -1, (100,50), choices=['Autoclave1', 'Autoclave2', 'Autoclave3'])
 
 		OrderNumber_label = wx.StaticText(self.MainPanel, -1, "Nro. Orden:")
 		self.OrderNumber = wx.TextCtrl(self.MainPanel, -1, "")
@@ -116,6 +128,8 @@ class MainFrame(wx.Frame):
 		dateSizer.Add(self.StartDate, 0,wx.ALL, 5)
 		dateSizer.Add(FinalDate_label, 0,wx.ALL, 5)
 		dateSizer.Add(self.FinalDate, 0,wx.ALL, 5)
+		autoclaveSelectorSizer.Add(AutoclaveChoice_label, 0, wx.ALL, 5)
+		autoclaveSelectorSizer.Add(self.AutoclaveChoice, 0, wx.ALL, 5)
 		orderNumberSizer.Add(OrderNumber_label, 0,wx.ALL, 5)
 		orderNumberSizer.Add(self.OrderNumber, 0,wx.ALL, 5)
 		checkBoxesSizer.Add(self.productionCheckbox, 0,wx.ALL, 5)		
@@ -123,12 +137,14 @@ class MainFrame(wx.Frame):
 
 		mainSizer.Add(dateSizer, 0)
 		mainSizer.Add(orderNumberSizer, 0)
+		mainSizer.Add(autoclaveSelectorSizer, 0)
 		mainSizer.Add(checkBoxesSizer, 0)
 		mainSizer.Add(FilterButton, 0)
 		self.MainPanel.SetSizer(mainSizer)
 
 		self.frameModel = MainModel()
 		pub.subscribe(self.UpdateCheckboxes, 'Checkboxes changed')
+
 
 	def OnProductionCheckbox(self, evt):
 		self.frameModel.SetCheckbox('Producción', self.productionCheckbox.GetValue())
@@ -141,7 +157,8 @@ class MainFrame(wx.Frame):
 		self.qualityCheckbox.Enable(self.frameModel.qualityCheckbox_enabled)
 
 	def OnFilterButtonClick(self, evt):
-		self.frameModel.FilterHandler(self.StartDate.GetValue(),  self.FinalDate.GetValue(), self.OrderNumber.GetValue())
+		self.frameModel.FilterHandler(self.StartDate.GetValue(),  self.FinalDate.GetValue(), self.OrderNumber.GetValue(),
+						self.AutoclaveChoice.GetSelection())
 
 	def OnCloseWindow(self, event):
 		self.Destroy()

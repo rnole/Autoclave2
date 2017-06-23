@@ -5,12 +5,13 @@ import wx.grid
 import Constants
 from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
-from table_def import PLC_registers
 from ProcessNotebook import ProcessNotebook
 from numpy import array, arange
 from wxmplot.plotframe import PlotFrame
 from mpldatacursor import datacursor
-
+from table_def import Autoclave1_table
+from table_def import Autoclave2_table
+from table_def import Autoclave3_table
 
 
 class QualityModel():
@@ -29,9 +30,9 @@ class QualityModel():
 			Session = sessionmaker(bind=engine)
 			session = Session()
 
-			self.starting_points = session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate,
-									PLC_registers.Fecha <= finalDate,
-									PLC_registers.Start_status == 1).all()
+			self.starting_points = session.query(Autoclave1_table).filter(Autoclave1_table.Fecha >= startDate,
+									Autoclave1_table.Fecha <= finalDate,
+									Autoclave1_table.Start_status == 1).all()
 
 			print 'len starting_points: ', len(self.starting_points)
 
@@ -43,27 +44,27 @@ class QualityModel():
 
 			self.stopping_points = []
 			self.orderNumber = int(orderNumber)
-			next_stopping_point = session.query(PLC_registers).first()
+			next_stopping_point = session.query(Autoclave1_table).first()
 			
 			while(1):
 			
-				self.orderNumber_found = session.query(PLC_registers).filter(PLC_registers.id > next_stopping_point.id).filter(
-											or_(PLC_registers.Producto1 == self.orderNumber,
-											    PLC_registers.Producto2 == self.orderNumber,
-											    PLC_registers.Producto3 == self.orderNumber,
-											    PLC_registers.Producto4 == self.orderNumber,
-											    PLC_registers.Producto5 == self.orderNumber,
-											    PLC_registers.Producto6 == self.orderNumber)).first()
+				self.orderNumber_found = session.query(Autoclave1_table).filter(Autoclave1_table.id > next_stopping_point.id).filter(
+											or_(Autoclave1_table.Producto1 == self.orderNumber,
+											    Autoclave1_table.Producto2 == self.orderNumber,
+											    Autoclave1_table.Producto3 == self.orderNumber,
+											    Autoclave1_table.Producto4 == self.orderNumber,
+											    Autoclave1_table.Producto5 == self.orderNumber,
+											    Autoclave1_table.Producto6 == self.orderNumber)).first()
 							
 				if(self.orderNumber_found == None):
 					print 'Entre a if(orderNumber_found)'
 					break
 
-				previous_starting_point = session.query(PLC_registers).filter(PLC_registers.id <= self.orderNumber_found.id,
-									PLC_registers.Start_status == 1).order_by(PLC_registers.id.desc()).first()
+				previous_starting_point = session.query(Autoclave1_table).filter(Autoclave1_table.id <= self.orderNumber_found.id,
+									Autoclave1_table.Start_status == 1).order_by(Autoclave1_table.id.desc()).first()
 
-				next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= self.orderNumber_found.id,
-									PLC_registers.End_status == 1).first()
+				next_stopping_point = session.query(Autoclave1_table).filter(Autoclave1_table.id >= self.orderNumber_found.id,
+									Autoclave1_table.End_status == 1).first()
 
 				if(next_stopping_point == None):
 					print 'Entre a if'
@@ -94,11 +95,11 @@ class QualityModel():
 		Session = sessionmaker(bind=engine)
 		session = Session()
 		
-		stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= (self.starting_points[button.GetId()].id + 1),
-								     PLC_registers.End_status == 1).first()
+		stopping_point = session.query(Autoclave1_table).filter(Autoclave1_table.id >= (self.starting_points[button.GetId()].id + 1),
+								     Autoclave1_table.End_status == 1).first()
 
-		results = session.query(PLC_registers).filter(PLC_registers.id >= (self.starting_points[button.GetId()].id), 
-							      PLC_registers.id <= (stopping_point.id -1)).all()
+		results = session.query(Autoclave1_table).filter(Autoclave1_table.id >= (self.starting_points[button.GetId()].id), 
+							      Autoclave1_table.id <= (stopping_point.id -1)).all()
 
 		Presion1_plot_array 	= []
 		Presion2_plot_array 	= []

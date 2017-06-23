@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
+from table_def import Autoclave1_table
+from table_def import Autoclave2_table
+from table_def import Autoclave3_table
+
 DATABASE_PATH	    = "sqlite:///../AutoclaveMonitoreo.sqlite"
 MAIN_FRAME_TITLE    = "Búsqueda de Datos Sistema de Monitoreo Autoclave 2"
 RESULTS_FRAME_TITLE = "Resultados de Producción"
@@ -12,6 +16,8 @@ MAIN_FRAME_SIZE = (600, 200)
 
 RESULTS_FRAME_POS  = (100, 100)
 RESULTS_FRAME_SIZE = (800, 500)
+
+Autoclave_dict = [Autoclave1_table, Autoclave2_table, Autoclave3_table]
 
 def ChangeDate2ddmmyy(date):
 

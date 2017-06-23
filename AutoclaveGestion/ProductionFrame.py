@@ -7,13 +7,13 @@ from datetime import datetime
 from ProcessNotebook import ProcessNotebook
 from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
-from table_def import PLC_registers
+
 
 COL_FECHA = 0
 COL_HORA_INICIO = 3
 COL_HORA_FIN = 4
 
-def GetGridData(startDate, finalDate, orderNumber):
+def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 
 	matrixTable = []
 
@@ -24,24 +24,24 @@ def GetGridData(startDate, finalDate, orderNumber):
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()
-
+		selected_table = Constants.Autoclave_dict[selectedAutoclave]
 		starting_points = []
 		
-		starting_points = session.query(PLC_registers).filter(PLC_registers.Fecha >= startDate,
-									PLC_registers.Fecha <= finalDate,
-									PLC_registers.Start_status == 1).all()
+		starting_points = session.query(selected_table).filter(selected_table.Fecha >= startDate,
+						selected_table.Fecha <= finalDate,
+						selected_table.Start_status == 1).all()
 
 		print len(starting_points)
 		
 		for i in range(len(starting_points)):
 			#with each starting point, get its corresponding stopping point
-			stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= (starting_points[i].id + 1),
-										PLC_registers.End_status == 1).first()
+			stopping_point = session.query(selected_table).filter(selected_table.id >= (starting_points[i].id + 1),
+										selected_table.End_status == 1).first()
 			print 'starting point: ', starting_points[i].id;
 			print 'stopping_point: ', stopping_point.id;
 
-			results = session.query(PLC_registers).filter(PLC_registers.id >= (starting_points[i].id), 
-							      	      PLC_registers.id <= (stopping_point.id -1)).all()
+			results = session.query(selected_table).filter(selected_table.id >= (starting_points[i].id), 
+							      	      selected_table.id <= (stopping_point.id -1)).all()
 
 			
 
@@ -78,31 +78,31 @@ def GetGridData(startDate, finalDate, orderNumber):
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()
-
+		selected_table = Constants.Autoclave_dict[selectedAutoclave]
 		stopping_points = []
 		orderNumber = int(orderNumber)
 
-		next_stopping_point = session.query(PLC_registers).first()
+		next_stopping_point = session.query(selected_table).first()
 		
 		while(1):
 		
-			orderNumber_found = session.query(PLC_registers).filter(PLC_registers.id > next_stopping_point.id).filter(
-										or_(PLC_registers.Producto1 == orderNumber,
-										    PLC_registers.Producto2 == orderNumber,
-										    PLC_registers.Producto3 == orderNumber,
-										    PLC_registers.Producto4 == orderNumber,
-										    PLC_registers.Producto5 == orderNumber,
-										    PLC_registers.Producto6 == orderNumber)).first()
+			orderNumber_found = session.query(selected_table).filter(selected_table.id > next_stopping_point.id).filter(
+										or_(selected_table.Producto1 == orderNumber,
+										    selected_table.Producto2 == orderNumber,
+										    selected_table.Producto3 == orderNumber,
+										    selected_table.Producto4 == orderNumber,
+										    selected_table.Producto5 == orderNumber,
+										    selected_table.Producto6 == orderNumber)).first()
 
 			if(orderNumber_found == None):
 				print 'Entre a if(orderNumber_found)'
 				break
 
-			previous_starting_point = session.query(PLC_registers).filter(PLC_registers.id <= orderNumber_found.id,
-									PLC_registers.Start_status == 1).order_by(PLC_registers.id.desc()).first()
+			previous_starting_point = session.query(selected_table).filter(selected_table.id <= orderNumber_found.id,
+									selected_table.Start_status == 1).order_by(selected_table.id.desc()).first()
 
-			next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id >= orderNumber_found.id,
-											PLC_registers.End_status == 1).first()							
+			next_stopping_point = session.query(selected_table).filter(selected_table.id >= orderNumber_found.id,
+										selected_table.End_status == 1).first()							
 			if(next_stopping_point == None):
 				print 'Entre a if(next_stopping_point)'
 				break
@@ -111,8 +111,8 @@ def GetGridData(startDate, finalDate, orderNumber):
 			print 'previous_starting_point: ', previous_starting_point.id
 			print 'next_stopping_point: ', next_stopping_point.id
 
-			results = session.query(PLC_registers).filter(PLC_registers.id >= previous_starting_point.id, 
-								      PLC_registers.id < next_stopping_point.id).all()
+			results = session.query(selected_table).filter(selected_table.id >= previous_starting_point.id, 
+								      selected_table.id < next_stopping_point.id).all()
 
 			row = []
 			Fecha = Constants.ChangeDate2ddmmyy(results[0].Fecha)
@@ -159,9 +159,9 @@ class ProductionTable(wx.grid.PyGridTableBase):
 
 	colLabels = ("Fecha", "Nº orden", "Peso", "Hora Inicio", "Hora Fin", "Proceso", "Red/Madeja", "Peso\nColorante", "Material", "Usuario")
 
-	def __init__(self, startDate, finalDate, orderNumber):
+	def __init__(self, startDate, finalDate, orderNumber, selectedAutoclave):
 
-		self.matrixTable = GetGridData(startDate, finalDate, orderNumber)
+		self.matrixTable = GetGridData(startDate, finalDate, orderNumber, selectedAutoclave)
 		wx.grid.PyGridTableBase.__init__(self)
 		self.odd=wx.grid.GridCellAttr()
         	self.odd.SetBackgroundColour("light blue")
@@ -193,7 +193,7 @@ class ProductionTable(wx.grid.PyGridTableBase):
 
 
 class ProductionFrame(wx.Frame):
-	def __init__(self, startDate, finalDate, orderNumber):
+	def __init__(self, startDate, finalDate, orderNumber, selectedAutoclave):
 		wx.Frame.__init__(self, parent=None, id=-1, title=Constants.RESULTS_FRAME_TITLE, 
 				pos=Constants.RESULTS_FRAME_POS, size=Constants.RESULTS_FRAME_SIZE)
 
@@ -201,13 +201,14 @@ class ProductionFrame(wx.Frame):
 		self.startDate = startDate
 		self.finalDate = finalDate
 		self.orderNumber = orderNumber
+		self.selectedAutoclave = selectedAutoclave
 		self.PanelInit()
 
 	def PanelInit(self):
 		
 		mainSizer = wx.BoxSizer(wx.VERTICAL)
 		self.grid1 = wx.grid.Grid(self.MainPanel)
-		self.grid1.SetTable(ProductionTable(self.startDate, self.finalDate, self.orderNumber))
+		self.grid1.SetTable(ProductionTable(self.startDate, self.finalDate, self.orderNumber, self.selectedAutoclave))
 		self.grid1.SetDefaultCellAlignment(wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
 		self.grid1.HideRowLabels()
 		self.grid1.SetLabelBackgroundColour("light blue")
@@ -291,15 +292,17 @@ class ProductionFrame(wx.Frame):
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()
-		
-		results = session.query(PLC_registers).filter(PLC_registers.Fecha >= selectedDate).\
-							filter(PLC_registers.Hora >= startTime).all()
-							
-		next_stopping_point = session.query(PLC_registers).filter(PLC_registers.id > results[0].id,
-									PLC_registers.Estatus == 0).first()
+		selected_table = Constants.Autoclave_dict[self.selectedAutoclave]
 
-		results = session.query(PLC_registers).filter(PLC_registers.id >= results[0].id,
-								PLC_registers.id <= (next_stopping_point.id - 1)).all()
+		results = session.query(selected_table).filter(selected_table.Fecha >= selectedDate).\
+							filter(selected_table.Hora >= startTime).all()
+		
+		#FALTA: Dejar de usar Estatus!!!
+		next_stopping_point = session.query(selected_table).filter(selected_table.id > results[0].id,
+									selected_table.Estatus == 0).first()
+
+		results = session.query(selected_table).filter(selected_table.id >= results[0].id,
+								selected_table.id <= (next_stopping_point.id - 1)).all()
 
 		self.processNotebook = ProcessNotebook(results)
 		self.processNotebook.Show()
