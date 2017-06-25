@@ -297,9 +297,8 @@ class ProductionFrame(wx.Frame):
 		results = session.query(selected_table).filter(selected_table.Fecha >= selectedDate).\
 							filter(selected_table.Hora >= startTime).all()
 		
-		#FALTA: Dejar de usar Estatus!!!
 		next_stopping_point = session.query(selected_table).filter(selected_table.id > results[0].id,
-									selected_table.Estatus == 0).first()
+									selected_table.End_status == 1).first()
 
 		results = session.query(selected_table).filter(selected_table.id >= results[0].id,
 								selected_table.id <= (next_stopping_point.id - 1)).all()
