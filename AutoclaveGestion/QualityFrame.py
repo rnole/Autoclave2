@@ -12,7 +12,7 @@ from mpldatacursor import datacursor
 from table_def import Autoclave1_table
 from table_def import Autoclave2_table
 from table_def import Autoclave3_table
-
+import logging
 
 class QualityModel():
 	def __init__(self):
@@ -25,7 +25,6 @@ class QualityModel():
 		
 		if(orderNumber == ''):
 			#Filtramos por fechas
-			# create a Session
 			engine = create_engine(Constants.DATABASE_PATH, echo=False)
 			Session = sessionmaker(bind=engine)
 			session = Session()
@@ -34,7 +33,6 @@ class QualityModel():
 									Autoclave1_table.Fecha <= finalDate,
 									Autoclave1_table.Start_status == 1).all()
 
-			print 'len starting_points: ', len(self.starting_points)
 
 		else:
 			#Filtramos por numero de orden
@@ -57,7 +55,7 @@ class QualityModel():
 											    Autoclave1_table.Producto6 == self.orderNumber)).first()
 							
 				if(self.orderNumber_found == None):
-					print 'Entre a if(orderNumber_found)'
+					logging.debug('No more orderNumbers found')
 					break
 
 				previous_starting_point = session.query(Autoclave1_table).filter(Autoclave1_table.id <= self.orderNumber_found.id,
@@ -67,30 +65,22 @@ class QualityModel():
 									Autoclave1_table.End_status == 1).first()
 
 				if(next_stopping_point == None):
-					print 'Entre a if'
+					logging.debug('No more stopping_points')
 					break
 
-				print 'orderNumber_found: ', self.orderNumber_found.id
-				print 'previous_starting_point: ', previous_starting_point.id
-				print 'next_stopping_point: ', next_stopping_point.id
 				self.starting_points.append(previous_starting_point)
 				
 
 		for i in range(len(self.starting_points)):
-			print 'ID starting point: ', self.starting_points[i].id
 			dates_list.append(self.starting_points[i].Fecha)
 
 		return dates_list
 
 
 	def DynamicButtonHandler(self, evt):
-		button = evt.GetEventObject()
-        	print "The button you pressed was labeled: " + button.GetLabel()
-		print "The button you pressed has ID: " + str(button.GetId())
-		
+		button = evt.GetEventObject()	
 
-		#Aqui hacer queries
-		# create a Session		
+		#Aqui hacer queries	
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()

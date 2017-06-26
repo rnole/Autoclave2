@@ -7,7 +7,7 @@ from datetime import datetime
 from ProcessNotebook import ProcessNotebook
 from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
-
+import logging
 
 COL_FECHA = 0
 COL_HORA_INICIO = 3
@@ -20,7 +20,6 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 	if(orderNumber == ''):
 
 		#Filtramos por fechas
-		# create a Session
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()
@@ -30,15 +29,11 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 		starting_points = session.query(selected_table).filter(selected_table.Fecha >= startDate,
 						selected_table.Fecha <= finalDate,
 						selected_table.Start_status == 1).all()
-
-		print len(starting_points)
 		
 		for i in range(len(starting_points)):
 			#with each starting point, get its corresponding stopping point
 			stopping_point = session.query(selected_table).filter(selected_table.id >= (starting_points[i].id + 1),
 										selected_table.End_status == 1).first()
-			print 'starting point: ', starting_points[i].id;
-			print 'stopping_point: ', stopping_point.id;
 
 			results = session.query(selected_table).filter(selected_table.id >= (starting_points[i].id), 
 							      	      selected_table.id <= (stopping_point.id -1)).all()
@@ -95,7 +90,7 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 										    selected_table.Producto6 == orderNumber)).first()
 
 			if(orderNumber_found == None):
-				print 'Entre a if(orderNumber_found)'
+				logging.debug('No more orderNumbers found')
 				break
 
 			previous_starting_point = session.query(selected_table).filter(selected_table.id <= orderNumber_found.id,
@@ -104,12 +99,9 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 			next_stopping_point = session.query(selected_table).filter(selected_table.id >= orderNumber_found.id,
 										selected_table.End_status == 1).first()							
 			if(next_stopping_point == None):
-				print 'Entre a if(next_stopping_point)'
+				logging.debug('No more stopping_points')
 				break
 
-			print 'orderNumber_found: ', orderNumber_found.id
-			print 'previous_starting_point: ', previous_starting_point.id
-			print 'next_stopping_point: ', next_stopping_point.id
 
 			results = session.query(selected_table).filter(selected_table.id >= previous_starting_point.id, 
 								      selected_table.id < next_stopping_point.id).all()
@@ -120,22 +112,16 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 			row.append(orderNumber)
 
 			if(orderNumber == results[5].Producto1):
-				print 'Entre a Producto1'
 				row.append(results[5].Peso1)
 			elif(orderNumber == results[5].Producto2):
-				print 'Entre a Producto2'
 				row.append(results[5].Peso2)
 			elif(orderNumber == results[5].Producto3):
-				print 'Entre a Producto3'
 				row.append(results[5].Peso3)
 			elif(orderNumber == results[5].Producto4):
-				print 'Entre a Producto4'
 				row.append(results[5].Peso4)
 			elif(orderNumber == results[5].Producto5):
-				print 'Entre a Producto5'
 				row.append(results[5].Peso5)
 			elif(orderNumber == results[5].Producto6):
-				print 'Entre a Producto6'
 				row.append(results[5].Peso6)
 
 			row.append(results[0].Hora)

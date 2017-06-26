@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import wx
 import Constants
+import logging
 from wx.lib.pubsub import pub
 from ProductionFrame import ProductionFrame
 from QualityFrame import QualityFrame
@@ -165,6 +166,7 @@ class MainFrame(wx.Frame):
 
 
 if __name__ == '__main__':
+	logging.basicConfig(level=logging.DEBUG)
 	app = wx.PySimpleApp()
 	myFrame = MainFrame()
 	myFrame.Show()
