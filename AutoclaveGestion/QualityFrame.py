@@ -9,13 +9,11 @@ from ProcessNotebook import ProcessNotebook
 from numpy import array, arange
 from wxmplot.plotframe import PlotFrame
 from mpldatacursor import datacursor
-from table_def import Autoclave1_table
-from table_def import Autoclave2_table
-from table_def import Autoclave3_table
 import logging
 
 class QualityModel():
-	def __init__(self):
+	def __init__(self, selectedAutoclave):
+		self.selectedAutoclave = selectedAutoclave
 		return
 
 	def GetDatesList(self, startDate, finalDate, orderNumber):
@@ -28,41 +26,41 @@ class QualityModel():
 			engine = create_engine(Constants.DATABASE_PATH, echo=False)
 			Session = sessionmaker(bind=engine)
 			session = Session()
+			selected_table = Constants.Autoclave_dict[self.selectedAutoclave]
+			self.starting_points = session.query(selected_table).filter(selected_table.Fecha >= startDate,
+									selected_table.Fecha <= finalDate,
+									selected_table.Start_status == 1).all()
 
-			self.starting_points = session.query(Autoclave1_table).filter(Autoclave1_table.Fecha >= startDate,
-									Autoclave1_table.Fecha <= finalDate,
-									Autoclave1_table.Start_status == 1).all()
-
-
+			
 		else:
 			#Filtramos por numero de orden
 			engine = create_engine(Constants.DATABASE_PATH, echo=False)
 			Session = sessionmaker(bind=engine)
 			session = Session()
-
+			selected_table = Constants.Autoclave_dict[self.selectedAutoclave]
 			self.stopping_points = []
 			self.orderNumber = int(orderNumber)
-			next_stopping_point = session.query(Autoclave1_table).first()
+			next_stopping_point = session.query(selected_table).first()
 			
 			while(1):
 			
-				self.orderNumber_found = session.query(Autoclave1_table).filter(Autoclave1_table.id > next_stopping_point.id).filter(
-											or_(Autoclave1_table.Producto1 == self.orderNumber,
-											    Autoclave1_table.Producto2 == self.orderNumber,
-											    Autoclave1_table.Producto3 == self.orderNumber,
-											    Autoclave1_table.Producto4 == self.orderNumber,
-											    Autoclave1_table.Producto5 == self.orderNumber,
-											    Autoclave1_table.Producto6 == self.orderNumber)).first()
+				self.orderNumber_found = session.query(selected_table).filter(selected_table.id > next_stopping_point.id).filter(
+											or_(selected_table.Producto1 == self.orderNumber,
+											    selected_table.Producto2 == self.orderNumber,
+											    selected_table.Producto3 == self.orderNumber,
+											    selected_table.Producto4 == self.orderNumber,
+											    selected_table.Producto5 == self.orderNumber,
+											    selected_table.Producto6 == self.orderNumber)).first()
 							
 				if(self.orderNumber_found == None):
 					logging.debug('No more orderNumbers found')
 					break
 
-				previous_starting_point = session.query(Autoclave1_table).filter(Autoclave1_table.id <= self.orderNumber_found.id,
-									Autoclave1_table.Start_status == 1).order_by(Autoclave1_table.id.desc()).first()
+				previous_starting_point = session.query(selected_table).filter(selected_table.id <= self.orderNumber_found.id,
+									selected_table.Start_status == 1).order_by(selected_table.id.desc()).first()
 
-				next_stopping_point = session.query(Autoclave1_table).filter(Autoclave1_table.id >= self.orderNumber_found.id,
-									Autoclave1_table.End_status == 1).first()
+				next_stopping_point = session.query(selected_table).filter(selected_table.id >= self.orderNumber_found.id,
+									selected_table.End_status == 1).first()
 
 				if(next_stopping_point == None):
 					logging.debug('No more stopping_points')
@@ -84,12 +82,12 @@ class QualityModel():
 		engine = create_engine(Constants.DATABASE_PATH, echo=False)
 		Session = sessionmaker(bind=engine)
 		session = Session()
-		
-		stopping_point = session.query(Autoclave1_table).filter(Autoclave1_table.id >= (self.starting_points[button.GetId()].id + 1),
-								     Autoclave1_table.End_status == 1).first()
+		selected_table = Constants.Autoclave_dict[self.selectedAutoclave]
+		stopping_point = session.query(selected_table).filter(selected_table.id >= (self.starting_points[button.GetId()].id + 1),
+								     selected_table.End_status == 1).first()
 
-		results = session.query(Autoclave1_table).filter(Autoclave1_table.id >= (self.starting_points[button.GetId()].id), 
-							      Autoclave1_table.id <= (stopping_point.id -1)).all()
+		results = session.query(selected_table).filter(selected_table.id >= (self.starting_points[button.GetId()].id), 
+							      selected_table.id <= (stopping_point.id -1)).all()
 
 		Presion1_plot_array 	= []
 		Presion2_plot_array 	= []
@@ -109,7 +107,7 @@ class QualityModel():
 
 
 class QualityFrame(wx.Frame):
-	def __init__(self, startDate, finalDate, orderNumber):
+	def __init__(self, startDate, finalDate, orderNumber, selectedAutoclave):
 		wx.Frame.__init__(self, parent=None, id=-1, title=Constants.QUALITY_FRAME_TITLE, 
 				pos=Constants.RESULTS_FRAME_POS, size=Constants.RESULTS_FRAME_SIZE)
 
@@ -117,7 +115,7 @@ class QualityFrame(wx.Frame):
 		self.startDate = startDate
 		self.finalDate = finalDate
 		self.orderNumber = orderNumber
-		self.qualityModel = QualityModel()
+		self.qualityModel = QualityModel(selectedAutoclave)
 		self.PanelInit()
 
 	def PanelInit(self):

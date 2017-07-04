@@ -13,6 +13,70 @@ COL_FECHA = 0
 COL_HORA_INICIO = 3
 COL_HORA_FIN = 4
 
+def GetDurationProcess(start_time, end_time):
+	start_hours, start_minutes = start_time.split(':')
+	end_hours, end_minutes = end_time.split(':')
+
+	start_total_minutes = int(start_hours)*60 + int(start_minutes)
+	end_total_minutes   = int(end_hours)*60 + int(end_minutes)
+
+	difference = end_total_minutes - start_total_minutes
+
+	if(difference < 0):
+		difference += 1440
+
+	difference_hours_part   = str(difference / 60)
+	difference_minutes_part = str(difference % 60)
+	
+	return difference_hours_part + ':' + difference_minutes_part
+
+def GetDurationDepletion(results):
+	duration_minutes = 0
+	last_index = len(results) -1
+
+	last_temperature = results[last_index].Temperatura
+
+	last_index -= 1
+	
+	while((results[last_index].Temperatura > (last_temperature -1)) and (last_index >= 0)):
+		duration_minutes +=1
+		last_index -= 1
+
+	duration_hours_part   = str(duration_minutes / 60)
+	duration_minutes_part = str(duration_minutes % 60)
+	
+	return duration_hours_part + ':' + duration_minutes_part
+
+	
+
+def GetDurationSlope(duration_process, duration_depletion):
+
+	duration_process_hrs, duration_process_mins = duration_process.split(':')
+	duration_depletion_hrs, duration_depletion_mins = duration_depletion.split(':')
+	
+	total_process_minutes  = int(duration_process_hrs)*60 + int(duration_process_mins)
+	total_depletion_minutes= int(duration_depletion_hrs)*60 + int(duration_depletion_mins)
+
+	difference = total_process_minutes - total_depletion_minutes
+
+	difference_hours_part   = str(difference / 60)
+	difference_minutes_part = str(difference % 60)
+
+	return difference_hours_part + ':' + difference_minutes_part
+
+def GetSlope(results, duration_slope, duration_depletion):
+	duration_slope_hrs, duration_slope_mins = duration_slope.split(':')
+	total_slope_minutes  = int(duration_slope_hrs)*60 + int(duration_slope_mins)
+
+	if(total_slope_minutes == 0):
+		return '0'
+	elif(total_slope_minutes >= len(results)):
+		return '0'
+	else:
+		slope =  (results[total_slope_minutes].Temperatura - results[0].Temperatura)/(total_slope_minutes) 
+	
+	return '%.2f' % slope
+
 def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 
 	matrixTable = []
@@ -39,6 +103,7 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 							      	      selected_table.id <= (stopping_point.id -1)).all()
 
 			
+			print 'len results: ', len(results)
 
 			Proceso = 'Lavado' if(results[5].Lavado == True) else 'Tenido'
 			Redes_o_Madejas = 'Red' if(results[5].Red_madeja == True) else 'Madeja'
@@ -53,6 +118,11 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 					 (results[5].Producto5, results[5].Peso5),
 					 (results[5].Producto6, results[5].Peso6))
 
+			duration_process = GetDurationProcess(results[0].Hora, results[len(results) - 1].Hora)
+			duration_depletion = GetDurationDepletion(results)
+			duration_slope	= GetDurationSlope(duration_process, duration_depletion)
+			slope = GetSlope(results, duration_slope, duration_depletion)
+
 			for producto_num, peso_num in products_list:
 				if(producto_num != 0):
 					row = []
@@ -61,6 +131,11 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 					row.append(peso_num)
 					row.append(results[0].Hora)
 					row.append(results[len(results) - 1].Hora)
+					row.append(duration_process)
+					row.append(duration_slope)
+					row.append(duration_depletion)
+					row.append(slope)
+
 					row.append(Proceso)
 					row.append(Redes_o_Madejas)
 					row.append(Peso_tinta)
@@ -124,9 +199,18 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 			elif(orderNumber == results[5].Producto6):
 				row.append(results[5].Peso6)
 
+			duration_process = GetDurationProcess(results[0].Hora, results[len(results) - 1].Hora)
+			duration_depletion = GetDurationDepletion(results)
+			duration_slope	= GetDurationSlope(duration_process, duration_depletion)
+			slope = GetSlope(results, duration_slope, duration_depletion)
+
 			row.append(results[0].Hora)
 			row.append(results[len(results) - 1].Hora)
-
+			row.append(duration_process)
+			row.append(duration_slope)
+			row.append(duration_depletion)
+			row.append(slope)
+			
 			Proceso = 'Lavado' if(results[5].Lavado == True) else 'Tenido'
 			Redes_o_Madejas = 'Red' if(results[5].Red_madeja == True) else 'Madeja'
 			Peso_tinta = results[5].Peso_tinta_redes if(results[5].Red_madeja == True) else results[5].Peso_tinta_madejas
@@ -143,7 +227,9 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 
 class ProductionTable(wx.grid.PyGridTableBase):
 
-	colLabels = ("Fecha", "Nº orden", "Peso", "Hora Inicio", "Hora Fin", "Proceso", "Red/Madeja", "Peso\nColorante", "Material", "Usuario")
+	colLabels = ("Fecha", "Nº orden", "Peso", "Hora Inicio", "Hora Fin", "Duración de \nProceso",
+			"Duración\n Pendiente", "Duración\n Agotamiento", "Pendiente\n(ºC/min)", "Proceso", 
+			"Red/Madeja", "Peso\nColorante", "Material", "Usuario")
 
 	def __init__(self, startDate, finalDate, orderNumber, selectedAutoclave):
 

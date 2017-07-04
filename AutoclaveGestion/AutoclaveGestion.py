@@ -59,7 +59,7 @@ class MainModel():
 			ResultsFrame.Show()
 
 		elif(self.qualityCheckbox_value == True):
-			ResultsFrame = QualityFrame(self.startDate, self.finalDate, orderNumber)
+			ResultsFrame = QualityFrame(self.startDate, self.finalDate, orderNumber, selectedAutoclave)
 			ResultsFrame.Show()	
 
 	def AreDatesCorrect(self, firstdate, seconddate):
