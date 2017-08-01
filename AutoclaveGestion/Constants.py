@@ -5,7 +5,7 @@ from table_def import Autoclave2_table
 from table_def import Autoclave3_table
 
 DATABASE_PATH	    = "sqlite:///../AutoclaveMonitoreo.sqlite"
-MAIN_FRAME_TITLE    = "Búsqueda de Datos Sistema de Monitoreo Autoclave 2"
+MAIN_FRAME_TITLE    = "Búsqueda de Datos: Monitoreo de Autoclaves"
 RESULTS_FRAME_TITLE = "Resultados de Producción"
 QUALITY_FRAME_TITLE = "Resultados de Calidad"
 PROCESS_FRAME_TITLE = "Base de datos: Proceso "

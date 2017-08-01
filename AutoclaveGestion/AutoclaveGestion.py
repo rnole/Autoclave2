@@ -2,10 +2,11 @@
 import wx
 import Constants
 import logging
+from wx.lib.pubsub import setupkwargs
 from wx.lib.pubsub import pub
 from ProductionFrame import ProductionFrame
 from QualityFrame import QualityFrame
-
+from utils import DeleteDataAutoclave
 
 class MainModel():
 
@@ -60,7 +61,21 @@ class MainModel():
 
 		elif(self.qualityCheckbox_value == True):
 			ResultsFrame = QualityFrame(self.startDate, self.finalDate, orderNumber, selectedAutoclave)
-			ResultsFrame.Show()	
+			ResultsFrame.Show()
+
+
+	def DeleteHandler(self, startDate, finalDate, selectedAutoclave):
+		if(self.AreDatesCorrect(startDate, finalDate) == False):
+			return
+
+		elif(selectedAutoclave == wx.NOT_FOUND):
+			dlg = wx.MessageDialog(None, 'Ningún Autoclave seleccionado', 'MessageDialog', wx.OK)
+			dlg_result = dlg.ShowModal()
+			dlg.Destroy()
+			return
+
+		DeleteDataAutoclave(self.startDate, self.finalDate, selectedAutoclave)
+
 
 	def AreDatesCorrect(self, firstdate, seconddate):
 		try:
@@ -102,7 +117,8 @@ class MainFrame(wx.Frame):
 		dateSizer =  wx.BoxSizer(wx.HORIZONTAL)
 		orderNumberSizer = wx.BoxSizer(wx.HORIZONTAL)
 		autoclaveSelectorSizer = wx.BoxSizer(wx.HORIZONTAL)
-		checkBoxesSizer  = wx.BoxSizer(wx.HORIZONTAL)
+		checkBoxesSizer = wx.BoxSizer(wx.HORIZONTAL)
+		buttonsSizer	= wx.BoxSizer(wx.HORIZONTAL)
 
 		StartDate_label = wx.StaticText(self.MainPanel, -1, "Fecha Desde:")
 		self.StartDate  = wx.TextCtrl(self.MainPanel, -1, "")
@@ -118,6 +134,9 @@ class MainFrame(wx.Frame):
 
 		FilterButton = wx.Button(self.MainPanel, -1, "Generar Reporte")
 		self.Bind(wx.EVT_BUTTON, self.OnFilterButtonClick, FilterButton)
+
+		DeleteButton = wx.Button(self.MainPanel, -1, "Borrar Datos")
+		self.Bind(wx.EVT_BUTTON, self.OnDeleteButtonClick, DeleteButton)
 	
 		self.productionCheckbox = wx.CheckBox(self.MainPanel, -1, "Producción")
 		self.qualityCheckbox    = wx.CheckBox(self.MainPanel, -1, "Calidad")
@@ -134,13 +153,15 @@ class MainFrame(wx.Frame):
 		orderNumberSizer.Add(OrderNumber_label, 0,wx.ALL, 5)
 		orderNumberSizer.Add(self.OrderNumber, 0,wx.ALL, 5)
 		checkBoxesSizer.Add(self.productionCheckbox, 0,wx.ALL, 5)		
-		checkBoxesSizer.Add(self.qualityCheckbox, 0,wx.ALL, 5)		
+		checkBoxesSizer.Add(self.qualityCheckbox, 0,wx.ALL, 5)
+		buttonsSizer.Add(FilterButton, 0, wx.ALL, 5)		
+		buttonsSizer.Add(DeleteButton, 0, wx.ALL, 5)		
 
 		mainSizer.Add(dateSizer, 0)
 		mainSizer.Add(orderNumberSizer, 0)
 		mainSizer.Add(autoclaveSelectorSizer, 0)
 		mainSizer.Add(checkBoxesSizer, 0)
-		mainSizer.Add(FilterButton, 0)
+		mainSizer.Add(buttonsSizer, 0)
 		self.MainPanel.SetSizer(mainSizer)
 
 		self.frameModel = MainModel()
@@ -160,6 +181,9 @@ class MainFrame(wx.Frame):
 	def OnFilterButtonClick(self, evt):
 		self.frameModel.FilterHandler(self.StartDate.GetValue(),  self.FinalDate.GetValue(), self.OrderNumber.GetValue(),
 						self.AutoclaveChoice.GetSelection())
+
+	def OnDeleteButtonClick(self, evt):
+		self.frameModel.DeleteHandler(self.StartDate.GetValue(), self.FinalDate.GetValue(), self.AutoclaveChoice.GetSelection())
 
 	def OnCloseWindow(self, event):
 		self.Destroy()

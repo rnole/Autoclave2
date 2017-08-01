@@ -26,9 +26,9 @@ def GetDurationProcess(start_time, end_time):
 		difference += 1440
 
 	difference_hours_part   = str(difference / 60)
-	difference_minutes_part = str(difference % 60)
+	difference_minutes_part = (difference % 60)
 	
-	return difference_hours_part + ':' + difference_minutes_part
+	return difference_hours_part + ':' + ('%.2d' % difference_minutes_part)
 
 def GetDurationDepletion(results):
 	duration_minutes = 0
@@ -38,14 +38,14 @@ def GetDurationDepletion(results):
 
 	last_index -= 1
 	
-	while((results[last_index].Temperatura > (last_temperature -1)) and (last_index >= 0)):
+	while((results[last_index].Temperatura > (last_temperature -2)) and (last_index >= 0)):
 		duration_minutes +=1
 		last_index -= 1
 
 	duration_hours_part   = str(duration_minutes / 60)
-	duration_minutes_part = str(duration_minutes % 60)
+	duration_minutes_part = (duration_minutes % 60)
 	
-	return duration_hours_part + ':' + duration_minutes_part
+	return duration_hours_part + ':' + ('%.2d' % duration_minutes_part)
 
 	
 
@@ -60,9 +60,9 @@ def GetDurationSlope(duration_process, duration_depletion):
 	difference = total_process_minutes - total_depletion_minutes
 
 	difference_hours_part   = str(difference / 60)
-	difference_minutes_part = str(difference % 60)
+	difference_minutes_part = (difference % 60)
 
-	return difference_hours_part + ':' + difference_minutes_part
+	return difference_hours_part + ':' + ('%.2d' % difference_minutes_part)
 
 def GetSlope(results, duration_slope, duration_depletion):
 	duration_slope_hrs, duration_slope_mins = duration_slope.split(':')
@@ -135,7 +135,7 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 					row.append(duration_slope)
 					row.append(duration_depletion)
 					row.append(slope)
-
+					row.append(results[len(results) - 1].Temperatura)
 					row.append(Proceso)
 					row.append(Redes_o_Madejas)
 					row.append(Peso_tinta)
@@ -216,6 +216,7 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 			Peso_tinta = results[5].Peso_tinta_redes if(results[5].Red_madeja == True) else results[5].Peso_tinta_madejas
 			Material = 'Polyester' if(results[5].Polyester == True) else 'Nylon'
 
+			row.append(results[len(results) - 1].Temperatura)
 			row.append(Proceso)
 			row.append(Redes_o_Madejas)
 			row.append(Peso_tinta)
@@ -228,7 +229,7 @@ def GetGridData(startDate, finalDate, orderNumber, selectedAutoclave):
 class ProductionTable(wx.grid.PyGridTableBase):
 
 	colLabels = ("Fecha", "Nº orden", "Peso", "Hora Inicio", "Hora Fin", "Duración de \nProceso",
-			"Duración\n Pendiente", "Duración\n Agotamiento", "Pendiente\n(ºC/min)", "Proceso", 
+			"Duración\n Pendiente", "Duración\n Agotamiento", "Pendiente\n(ºC/min)", "Temperatura\nfinal ºC", "Proceso", 
 			"Red/Madeja", "Peso\nColorante", "Material", "Usuario")
 
 	def __init__(self, startDate, finalDate, orderNumber, selectedAutoclave):
@@ -375,6 +376,7 @@ class ProductionFrame(wx.Frame):
 		results = session.query(selected_table).filter(selected_table.id >= results[0].id,
 								selected_table.id <= (next_stopping_point.id - 1)).all()
 
-		self.processNotebook = ProcessNotebook(results)
+		self.processNotebook = ProcessNotebook(results, self.selectedAutoclave, results[0].Fecha, results[0].Hora,
+							results[len(results) - 1].Hora)
 		self.processNotebook.Show()
 		self.processNotebook.Maximize(True)

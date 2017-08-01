@@ -100,7 +100,8 @@ class QualityModel():
 			PresionInt_plot_array.append(row.Presion_interior)
 			Temperatura_plot_array.append(row.Temperatura)
 
-		self.processNotebook = ProcessNotebook(results)
+		self.processNotebook = ProcessNotebook(results, self.selectedAutoclave, results[0].Fecha,
+						results[0].Hora, results[len(results) - 1].Hora)
 		self.processNotebook.Show()
 		self.processNotebook.Maximize(True)
 

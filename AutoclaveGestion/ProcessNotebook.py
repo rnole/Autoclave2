@@ -6,13 +6,13 @@ from QualityPlotPanel import QualityPlotPanel
 
 class ProcessNotebook(wx.Frame):
 
-	def __init__(self, queryResults):
+	def __init__(self, queryResults, selectedAutoclave, date, startHour, endHour):
 		wx.Frame.__init__(self, None, -1, "Tabla y gráfica de proceso seleccionado")
 		nb = wx.Notebook(self, -1, style=wx.BK_DEFAULT)
 
 		p1 = ProcessPanel(nb, queryResults)
 		nb.AddPage(p1, "Tabla")
 
-		p2 = QualityPlotPanel(nb, queryResults)
+		p2 = QualityPlotPanel(nb, queryResults, selectedAutoclave, date, startHour, endHour)
 		nb.AddPage(p2, "Gráfico")
 

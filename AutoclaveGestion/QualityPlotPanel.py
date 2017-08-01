@@ -8,7 +8,7 @@ from mpldatacursor import datacursor
 
 class QualityPlotPanel(PlotPanel):
 
-	def __init__(self, parent, queryResults):
+	def __init__(self, parent, queryResults, selectedAutoclave, date, startHour, endHour):
 		PlotPanel.__init__(self, parent)
 
 		Presion1_plot_array 	= []
@@ -16,6 +16,9 @@ class QualityPlotPanel(PlotPanel):
 		PresionInt_plot_array 	= []
 		Temperatura_plot_array	= []
 		
+		plotTitle = "Parametros de Proceso - Autoclave" + str(selectedAutoclave+1) + \
+				' - ' + date + ' ' + startHour + ' - '+ endHour
+
 		for row in queryResults:
 			Presion1_plot_array.append(row.Presion1)
 			Presion2_plot_array.append(row.Presion2)
@@ -23,7 +26,7 @@ class QualityPlotPanel(PlotPanel):
 			Temperatura_plot_array.append(row.Temperatura)
 	
 		self.CreateData(Presion1_plot_array, Presion2_plot_array, PresionInt_plot_array, Temperatura_plot_array)
-		line1 = self.plot(self.x, self.y1, title= "Parametros de Proceso - Autoclave 2", 
+		line1 = self.plot(self.x, self.y1, title= plotTitle, 
 					ylabel="Presion[psi]", xlabel="Tiempo de Proceso[min]", 
 					marker='o', color="blue", label='Presion Bomba 1', xmax=140, ymin=0, ymax=100,
 					legendfontsize=5, labelfontsize=6)
