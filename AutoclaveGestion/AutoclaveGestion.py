@@ -74,7 +74,13 @@ class MainModel():
 			dlg.Destroy()
 			return
 
-		DeleteDataAutoclave(self.startDate, self.finalDate, selectedAutoclave)
+		dlg = wx.MessageDialog(None, '¿Seguro que desea borrar datos?', 'Confirmar', wx.YES_NO | wx.ICON_QUESTION)
+		retCode = dlg.ShowModal()
+		dlg.Destroy()
+
+		if(retCode == wx.ID_YES):
+			DeleteDataAutoclave(self.startDate, self.finalDate, selectedAutoclave)
+		
 
 
 	def AreDatesCorrect(self, firstdate, seconddate):
